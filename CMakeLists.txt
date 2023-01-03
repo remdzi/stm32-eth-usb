@@ -21,66 +21,67 @@ set(SRC_FILES
 
    main.c
    uart.c
-   )
+)
 
 set(EXECUTABLE ${PROJECT_NAME}.elf)
 
 add_executable(${EXECUTABLE} ${SRC_FILES})
 
 target_compile_definitions(${EXECUTABLE} PRIVATE
-        -DUSE_HAL_DRIVER
-        -DSTM32F207xx
-        )
+   -DUSE_HAL_DRIVER
+   -DSTM32F207xx
+)
 
 target_include_directories(${EXECUTABLE} PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        
-        STM32CubeF2/Drivers/CMSIS/Device/ST/STM32F2xx/Include
-        STM32CubeF2/Drivers/CMSIS/Include
+   ${CMAKE_CURRENT_SOURCE_DIR}
 
-        STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Inc
-        )
+   STM32CubeF2/Drivers/CMSIS/Device/ST/STM32F2xx/Include
+   STM32CubeF2/Drivers/CMSIS/Include
+
+   STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Inc
+)
 
 target_compile_options(${EXECUTABLE} PRIVATE  
-        -mcpu=cortex-m3
-        -mthumb
-        -mfloat-abi=soft
+   -mcpu=cortex-m3
+   -mthumb
+   -mfloat-abi=soft
 
-        -fdata-sections
-        -ffunction-sections
+   -fdata-sections
+   -ffunction-sections
 
-        -Wall
+   -Wall
 
-        -O3
-        -g 
-        )
+   -O3
+   -g
+)
 
 target_link_options(${EXECUTABLE} PRIVATE
-        -T${CMAKE_SOURCE_DIR}/STM32F207ZGTx_FLASH.ld
+   -T${CMAKE_SOURCE_DIR}/STM32F207ZGTx_FLASH.ld
       
-        -mcpu=cortex-m3
-        -mthumb
-        -mfloat-abi=soft
+   -mcpu=cortex-m3
+   -mthumb
+   -mfloat-abi=soft
 
-        -specs=nosys.specs
-        -specs=nano.specs
+   -specs=nosys.specs
+   -specs=nano.specs
 
-        -Wl,-Map=${PROJECT_NAME}.map,--cref
-        -Wl,--gc-sections
-        )
+   -Wl,-Map=${PROJECT_NAME}.map,--cref
+   -Wl,--gc-sections
+)
 
 add_custom_command(TARGET ${EXECUTABLE}
-        POST_BUILD
-        COMMAND arm-none-eabi-size ${EXECUTABLE})
-        
+   POST_BUILD
+   COMMAND arm-none-eabi-size ${EXECUTABLE}
+)
+
 add_custom_target(flash
-    DEPENDS ${EXECUTABLE}
-    COMMAND openocd -f ../st_nucleo_f2.cfg -c init -c "reset halt" -c "flash write_image erase ${EXECUTABLE}" -c "reset run" -c exit
-    VERBATIM
+   DEPENDS ${EXECUTABLE}
+   COMMAND openocd -f ../st_nucleo_f2.cfg -c init -c "reset halt" -c "flash write_image erase ${EXECUTABLE}" -c "reset run" -c exit
+   VERBATIM
 )
 
 add_custom_target(gdb
-    DEPENDS ${EXECUTABLE}
-    COMMAND ${CMAKE_SOURCE_DIR}/gdb.sh ${EXECUTABLE}
-    VERBATIM
+   DEPENDS ${EXECUTABLE}
+   COMMAND ${CMAKE_SOURCE_DIR}/gdb.sh ${EXECUTABLE}
+   VERBATIM
 )
