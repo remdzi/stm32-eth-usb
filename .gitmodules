@@ -1,3 +1,6 @@
 [submodule "STM32CubeF2"]
 	path = STM32CubeF2
 	url = https://github.com/STMicroelectronics/STM32CubeF2.git
+[submodule "stm32_mw_usb_device"]
+	path = stm32_mw_usb_device
+	url = https://github.com/STMicroelectronics/stm32_mw_usb_device

@@ -19,6 +19,17 @@ set(SRC_FILES
    STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Src/stm32f2xx_hal_rcc.c
    STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Src/stm32f2xx_hal_uart.c
 
+   STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Src/stm32f2xx_hal_pcd.c
+   STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Src/stm32f2xx_hal_pcd_ex.c
+   STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Src/stm32f2xx_ll_usb.c
+   usbd_conf.c
+   usbd_cdc_ecm_if.c
+   usbd_desc.c
+   stm32_mw_usb_device/Core/Src/usbd_core.c
+   stm32_mw_usb_device/Core/Src/usbd_ctlreq.c
+   stm32_mw_usb_device/Core/Src/usbd_ioreq.c
+   stm32_mw_usb_device/Class/CDC_ECM/Src/usbd_cdc_ecm.c
+
    main.c
    uart.c
 )
@@ -30,6 +41,7 @@ add_executable(${EXECUTABLE} ${SRC_FILES})
 target_compile_definitions(${EXECUTABLE} PRIVATE
    -DUSE_HAL_DRIVER
    -DSTM32F207xx
+   -DUSE_USB_FS
 )
 
 target_include_directories(${EXECUTABLE} PRIVATE
@@ -39,6 +51,9 @@ target_include_directories(${EXECUTABLE} PRIVATE
    STM32CubeF2/Drivers/CMSIS/Include
 
    STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Inc
+
+   stm32_mw_usb_device/Core/Inc
+   stm32_mw_usb_device/Class/CDC_ECM/Inc
 )
 
 target_compile_options(${EXECUTABLE} PRIVATE  

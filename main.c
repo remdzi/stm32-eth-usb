@@ -2,12 +2,23 @@
 
 #include "stm32f2xx_hal.h"
 
+#include "usbd_core.h"
+#include "usbd_desc.h"
+#include "usbd_conf.h"
+#include "usbd_cdc_ecm.h"
+#include "usbd_cdc_ecm_if.h"
+
+USBD_HandleTypeDef USBD_Device;
+extern PCD_HandleTypeDef hpcd;
+
 #include "uart.h"
 
 void SystemClock_Config(void);
 
 int main(void)
 {
+   uint32_t u32PreviousTick = 0;
+
    HAL_Init();
 
    /* Configure the system clock to 120 MHz */
@@ -16,7 +27,34 @@ int main(void)
    uart3_init();
    printf("Hello world!\r\n");
 
-   while(1);
+   /* Init Device Library, add supported class and start the library. */
+   if (USBD_Init(&USBD_Device, &Class_Desc, 0) != USBD_OK)
+   {
+     Error_Handler();
+   }
+   if (USBD_RegisterClass(&USBD_Device, &USBD_CDC_ECM) != USBD_OK)
+   {
+     Error_Handler();
+   }
+   if (USBD_CDC_ECM_RegisterInterface(&USBD_Device, &USBD_CDC_ECM_fops) != USBD_OK)
+   {
+     Error_Handler();
+   }
+   if (USBD_Start(&USBD_Device) != USBD_OK)
+   {
+     Error_Handler();
+   }
+
+   while(1)
+   {
+      if (HAL_GetTick() - u32PreviousTick > 1000)
+      {
+         u32PreviousTick += 1000;
+         printf("One second loop!\r\n");
+      }
+      
+      USBD_CDC_ECM_fops.Process(&USBD_Device);
+   }
 }
 
 void SystemClock_Config(void)
@@ -54,5 +92,10 @@ void Error_Handler(void)
 
 void SysTick_Handler(void)
 {
-    HAL_IncTick();
+   HAL_IncTick();
+}
+
+void OTG_FS_IRQHandler(void)
+{
+   HAL_PCD_IRQHandler(&hpcd);
 }
