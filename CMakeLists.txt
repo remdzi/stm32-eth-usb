@@ -13,7 +13,14 @@ set(SRC_FILES
    STM32CubeF2/Drivers/CMSIS/Device/ST/STM32F2xx/Source/Templates/gcc/startup_stm32f207xx.s
    STM32CubeF2/Drivers/CMSIS/Device/ST/STM32F2xx/Source/Templates/system_stm32f2xx.c
    
+   STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Src/stm32f2xx_hal.c
+   STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Src/stm32f2xx_hal_cortex.c
+   STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Src/stm32f2xx_hal_gpio.c
+   STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Src/stm32f2xx_hal_rcc.c
+   STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Src/stm32f2xx_hal_uart.c
+
    main.c
+   uart.c
    )
 
 set(EXECUTABLE ${PROJECT_NAME}.elf)
@@ -21,6 +28,7 @@ set(EXECUTABLE ${PROJECT_NAME}.elf)
 add_executable(${EXECUTABLE} ${SRC_FILES})
 
 target_compile_definitions(${EXECUTABLE} PRIVATE
+        -DUSE_HAL_DRIVER
         -DSTM32F207xx
         )
 
@@ -29,6 +37,8 @@ target_include_directories(${EXECUTABLE} PRIVATE
         
         STM32CubeF2/Drivers/CMSIS/Device/ST/STM32F2xx/Include
         STM32CubeF2/Drivers/CMSIS/Include
+
+        STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Inc
         )
 
 target_compile_options(${EXECUTABLE} PRIVATE  
