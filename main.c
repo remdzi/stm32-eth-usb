@@ -14,6 +14,7 @@ extern PCD_HandleTypeDef hpcd;
 #include "uart.h"
 
 void SystemClock_Config(void);
+void Error_Handler(void);
 
 int main(void)
 {
