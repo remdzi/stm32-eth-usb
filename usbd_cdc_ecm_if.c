@@ -263,11 +263,14 @@ static int8_t CDC_ECM_Itf_Process(USBD_HandleTypeDef *pdev)
 
   if (hcdc_cdc_ecm->LinkStatus != 0U)
   {
-    /*
-      Read a received packet from the Ethernet buffers and send it
-      to the lwIP for handling
-      Call here the TCP/IP background tasks.
-    */
+    if (  hcdc_cdc_ecm->RxState == 1U)
+    {
+       hcdc_cdc_ecm->RxState = 0U;
+       hcdc_cdc_ecm->RxLength = 0U;
+       (void)USBD_CDC_ECM_SetRxBuffer(&USBD_Device, UserRxBuffer);
+       USBD_CDC_ECM_ReceivePacket(&USBD_Device);
+       printf("USBD_CDC_ECM_SetRxBuffer\r\n");
+    }
   }
 
   return (0);
