@@ -11,6 +11,7 @@
 USBD_HandleTypeDef USBD_Device;
 extern PCD_HandleTypeDef hpcd;
 
+#include "eth.h"
 #include "uart.h"
 
 void SystemClock_Config(void);
@@ -27,6 +28,8 @@ int main(void)
 
    uart3_init();
    printf("Hello world!\r\n");
+
+   eth_init();
 
    /* Init Device Library, add supported class and start the library. */
    if (USBD_Init(&USBD_Device, &Class_Desc, 0) != USBD_OK)

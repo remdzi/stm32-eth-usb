@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <stdio.h>
 #include "usbd_cdc_ecm_if.h"
+#include "eth.h"
 /*
 
   Include here  LwIP files if used
@@ -33,13 +34,13 @@
 #if defined ( __ICCARM__ ) /*!< IAR Compiler */
 #pragma data_alignment=4
 #endif /* ( __ICCARM__ ) */
-__ALIGN_BEGIN static uint8_t UserRxBuffer[CDC_ECM_ETH_MAX_SEGSZE + 100]__ALIGN_END;
+//__ALIGN_BEGIN static uint8_t UserRxBuffer[CDC_ECM_ETH_MAX_SEGSZE + 100]__ALIGN_END;
 
 /* Transmitted Data over CDC_ECM (CDC_ECM interface) are stored in this buffer */
 #if defined ( __ICCARM__ ) /*!< IAR Compiler */
 #pragma data_alignment=4
 #endif /* ( __ICCARM__ ) */
-__ALIGN_BEGIN  static uint8_t UserTxBuffer[CDC_ECM_ETH_MAX_SEGSZE + 100]__ALIGN_END;
+//__ALIGN_BEGIN  static uint8_t UserTxBuffer[CDC_ECM_ETH_MAX_SEGSZE + 100]__ALIGN_END;
 
 static uint8_t CDC_ECMInitialized = 0U;
 
@@ -75,22 +76,23 @@ USBD_CDC_ECM_ItfTypeDef USBD_CDC_ECM_fops =
   */
 static int8_t CDC_ECM_Itf_Init(void)
 {
+  uint8_t * eth_tx_buf;
+
   if (CDC_ECMInitialized == 0U)
   {
-    /*
-      Initialize the TCP/IP stack here
-    */
-
     CDC_ECMInitialized = 1U;
   }
 
   /* Set Application Buffers */
-#ifdef USE_USBD_COMPOSITE
-  (void)USBD_CDC_ECM_SetTxBuffer(&USBD_Device, UserTxBuffer, 0U, 0U);
-#else
-  (void)USBD_CDC_ECM_SetTxBuffer(&USBD_Device, UserTxBuffer, 0U);
-#endif /* USE_USBD_COMPOSITE */
-  (void)USBD_CDC_ECM_SetRxBuffer(&USBD_Device, UserRxBuffer);
+  eth_tx_buf = eth_get_tx_buf();
+  if (eth_tx_buf != NULL)
+  {
+     (void)USBD_CDC_ECM_SetRxBuffer(&USBD_Device, eth_tx_buf);
+  }
+  else
+  {
+     printf("ERROR: CDC_ECM_Itf_Init no more ETH TX buffer available !!!\r\n");
+  }
 
   return (0);
 }
@@ -211,7 +213,7 @@ static int8_t CDC_ECM_Itf_Receive(uint8_t *Buf, uint32_t *Len)
 
   /* Call Eth buffer processing */
   hcdc_cdc_ecm->RxState = 1U;
-  printf("CDC_ECM_Itf_Receive %ld bytes\r\n", *Len);
+  //printf("CDC_ECM_Itf_Receive %ld bytes\r\n", *Len);
 
   UNUSED(Len);
   UNUSED(Buf);
@@ -237,6 +239,10 @@ static int8_t CDC_ECM_Itf_TransmitCplt(uint8_t *Buf, uint32_t *Len, uint8_t epnu
   UNUSED(Len);
   UNUSED(epnum);
 
+  /* USB has completed the transmission of the ethernet frame received:
+  --> Release ethernet buffer */
+  eth_release_rx_buf();
+
   return (0);
 }
 
@@ -249,6 +255,10 @@ static int8_t CDC_ECM_Itf_TransmitCplt(uint8_t *Buf, uint32_t *Len, uint8_t epnu
   */
 static int8_t CDC_ECM_Itf_Process(USBD_HandleTypeDef *pdev)
 {
+  uint8_t * eth_tx_buf;
+  uint8_t * eth_rx_buf;
+  uint32_t eth_rx_length;
+
   /* Get the CDC_ECM handler pointer */
 #ifdef USE_USBD_COMPOSITE
   USBD_CDC_ECM_HandleTypeDef *hcdc_cdc_ecm = (USBD_CDC_ECM_HandleTypeDef *)(pdev->pClassDataCmsit[pdev->classId]);
@@ -263,13 +273,40 @@ static int8_t CDC_ECM_Itf_Process(USBD_HandleTypeDef *pdev)
 
   if (hcdc_cdc_ecm->LinkStatus != 0U)
   {
-    if (  hcdc_cdc_ecm->RxState == 1U)
+    if (hcdc_cdc_ecm->RxState == 1U)
     {
-       hcdc_cdc_ecm->RxState = 0U;
-       hcdc_cdc_ecm->RxLength = 0U;
-       (void)USBD_CDC_ECM_SetRxBuffer(&USBD_Device, UserRxBuffer);
-       USBD_CDC_ECM_ReceivePacket(&USBD_Device);
-       printf("USBD_CDC_ECM_SetRxBuffer\r\n");
+       /* USB has received a buffer
+       --> Send it to ethernet */
+       eth_send(hcdc_cdc_ecm->RxLength);
+       hcdc_cdc_ecm->RxState = 2U;
+    }
+    else if (hcdc_cdc_ecm->RxState == 2U)
+    {
+       /* Get a new ethernet tx buffer and configure USB to receive on it */
+       eth_tx_buf = eth_get_tx_buf();
+       if (eth_tx_buf != NULL)
+       {
+          hcdc_cdc_ecm->RxLength = 0;
+          hcdc_cdc_ecm->RxState = 0U;
+          (void)USBD_CDC_ECM_SetRxBuffer(&USBD_Device, eth_tx_buf);
+          USBD_CDC_ECM_ReceivePacket(&USBD_Device);
+       }
+       else
+       {
+          printf("ERROR: CDC_ECM_Itf_Receive no more ETH TX buffer available !!!\r\n");
+       }
+    }
+
+    if (hcdc_cdc_ecm->TxState == 0U)
+    {
+       /* Get an ethernet rx buffer and configure USB to send it */
+       eth_rx_buf = eth_receive(&eth_rx_length);
+       if (eth_rx_buf != NULL)
+       {
+         //printf("ETH RX %ld\r\n", eth_rx_length);
+         (void)USBD_CDC_ECM_SetTxBuffer(&USBD_Device, eth_rx_buf, eth_rx_length);
+         USBD_CDC_ECM_TransmitPacket(&USBD_Device);
+       }
     }
   }
 

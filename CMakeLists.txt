@@ -30,6 +30,9 @@ set(SRC_FILES
    stm32_mw_usb_device/Core/Src/usbd_ioreq.c
    stm32_mw_usb_device/Class/CDC_ECM/Src/usbd_cdc_ecm.c
 
+   STM32CubeF2/Drivers/STM32F2xx_HAL_Driver/Src/stm32f2xx_hal_eth.c
+
+   eth.c
    main.c
    uart.c
 )
